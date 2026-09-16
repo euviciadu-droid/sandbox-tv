@@ -19,11 +19,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Dar permissao de execucao ao Gradle
-        run: chmod +x gradlew
-
-      - name: Compilar APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Recriar Wrapper e Compilar APK
+        run: |
+          # 1. Instala o gradle padrão do sistema
+          sudo apt-get update && sudo apt-get install -y gradle
+          
+          # 2. Gera a pasta gradle/wrapper e o arquivo .jar que faltaram
+          gradle wrapper
+          
+          # 3. Dá permissão e compila o projeto
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Disponibilizar Link de Download do APK
         uses: actions/upload-artifact@v4
