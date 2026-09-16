@@ -19,16 +19,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Instalar Gradle no Runner (caso nao tenha wrapper)
+      - name: Instalar Gradle
         run: sudo apt-get update && sudo apt-get install -y gradle
 
       - name: Compilar APK
         run: |
+          # Procura a pasta onde estao os arquivos do Gradle
+          GRADLE_DIR=$(find . -maxdepth 2 -name "settings.gradle" -exec dirname {} \; | head -n 1)
+          if [ -z "$GRADLE_DIR" ]; then GRADLE_DIR="."; fi
+          
+          cd "$GRADLE_DIR"
+          echo "Compilando na pasta: $GRADLE_DIR"
+          
           if [ -f "./gradlew" ]; then
             chmod +x gradlew
-            ./gradlew assembleDebug --no-daemon --stacktrace
+            ./gradlew :app:assembleDebug --no-daemon --stacktrace
           else
-            gradle assembleDebug --no-daemon --stacktrace
+            gradle :app:assembleDebug --no-daemon --stacktrace
           fi
 
       - name: Disponibilizar Link de Download do APK
