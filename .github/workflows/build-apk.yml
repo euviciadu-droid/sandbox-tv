@@ -1,39 +1,48 @@
-name: Compilar APK REPL4Y
+name: REPL4Y - Build APK
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [ "main", "repl4y-1.7" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repl4y-build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - name: Baixar codigo do repositorio
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar Java JDK 17
+      - name: Setup JDK 17
         uses: actions/setup-java@v5
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
 
-      - name: Recriar Wrapper e Compilar APK
-        run: |
-          # 1. Instala o gradle padrão do sistema
-          sudo apt-get update && sudo apt-get install -y gradle
-          
-          # 2. Gera a pasta gradle/wrapper e o arquivo .jar que faltaram
-          gradle wrapper
-          
-          # 3. Dá permissão e compila o projeto
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
 
-      - name: Disponibilizar Link de Download do APK
+      - name: Verify project
+        run: ./gradlew projects --no-daemon --stacktrace
+
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: REPL4Y-TV-Instalador
-          path: "app/build/outputs/apk/**/*.apk"
+          name: REPL4Y-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
           retention-days: 14
